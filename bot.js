@@ -1,65 +1,47 @@
 /**
- * TELEGRAM BOT FOR CLOUDFLARE WORKERS
+ * AVIATOR PREDICTIOR - FUN SIMULATOR
+ * Cloudflare Worker + Telegram Bot
  *
- * IMPORTANT:
- * Add your Telegram bot token in Cloudflare as a Secret named:
- *
+ * Add your Cloudflare Secret:
  * TELEGRAM_BOT_TOKEN
  *
- * Do NOT paste your token directly into this code.
+ * NOTE:
+ * This bot generates entertainment-only random predictions.
+ * It does NOT predict real Aviator game outcomes.
  */
 
+const BOT_START_TIME = Date.now();
 
-const facts = [
-  "Honey can remain edible for an extremely long time when stored properly.",
-  "Octopuses have three hearts.",
-  "A day on Venus is longer than one year on Venus.",
-  "Bananas are botanically classified as berries.",
-  "Your brain uses a significant amount of your body's energy."
-];
-
-
-const quotes = [
-  "Small progress every day adds up to big results.",
-  "Start where you are. Use what you have. Do what you can.",
-  "Consistency is often more powerful than motivation.",
-  "Your future is created by what you do today."
-];
-
+const OWNER = "Unique Engoke Lesley";
+const VERSION = "v1.0.0";
 
 export default {
-
   async fetch(request, env) {
 
-    // When you open the Worker URL in a browser
+    // Check that the Worker is online
     if (request.method === "GET") {
       return new Response(
-        "Telegram Bot is online and ready!",
+        "AVIATOR PREDICTIOR BOT IS ONLINE",
         {
           status: 200
         }
       );
     }
 
-
-    // Telegram sends updates using POST
     if (request.method !== "POST") {
       return new Response(
-        "Method not allowed",
+        "Method Not Allowed",
         {
           status: 405
         }
       );
     }
 
-
     try {
 
-      // Receive Telegram update
       const update = await request.json();
 
-
-      // Ignore updates without normal messages
+      // Ignore unsupported updates
       if (!update.message) {
         return new Response(
           "OK",
@@ -69,177 +51,183 @@ export default {
         );
       }
 
-
       const chatId = update.message.chat.id;
 
       const firstName =
         update.message.from?.first_name ||
-        "Friend";
+        "User";
 
       const text =
         (update.message.text || "").trim();
 
-
       let replyText;
 
-      const replyMarkup = mainMenu();
+      // START / HOME
 
-
-      // START OR HOME
       if (
         text === "/start" ||
-        text === "🏠 Home"
+        text === "🏠 HOME"
       ) {
 
-        replyText =
-          `Welcome, ${firstName}! 👋\n\n` +
-          "I am your Cloudflare-powered Telegram assistant.\n\n" +
-          "Choose something from the menu below.";
+        replyText = getMainMenu(firstName);
 
       }
 
 
-      // HELP
+      // PREDICTION
+
       else if (
-        text === "/help" ||
-        text === "🆘 Help"
+        text === "✈️ GET PREDICTION"
       ) {
 
+        const prediction =
+          generateFunPrediction();
+
         replyText =
-          "🆘 HELP CENTER\n\n" +
-          "Here is what you can do:\n\n" +
-          "🎲 Random Fact — Learn something interesting\n" +
-          "💡 Daily Inspiration — Get motivation\n" +
-          "🎯 Mini Challenge — Receive a challenge\n" +
-          "📊 My Profile — View your Telegram information\n" +
-          "ℹ️ About — Learn about this bot\n" +
-          "🏠 Home — Return to the main menu";
+          "✈️ AVIATOR FUN SIMULATOR\n\n" +
+          "━━━━━━━━━━━━━━━━━━\n\n" +
+          "🎯 SIMULATED MULTIPLIER\n\n" +
+          `🚀 ${prediction.multiplier}x\n\n` +
+          `📊 Confidence: ${prediction.confidence}%\n` +
+          `⚡ Signal: ${prediction.signal}\n\n` +
+          "━━━━━━━━━━━━━━━━━━\n\n" +
+          "⚠️ FOR ENTERTAINMENT ONLY\n\n" +
+          "This result is randomly generated and " +
+          "does not predict or guarantee the outcome " +
+          "of any real Aviator game.";
 
       }
 
 
-      // RANDOM FACT
+      // MULTIPLE SIGNALS
+
       else if (
-        text === "/fact" ||
-        text === "🎲 Random Fact"
+        text === "📡 SIGNALS"
       ) {
 
-        const fact =
-          pickRandom(facts);
+        const signals =
+          generateSignals();
 
         replyText =
-          "🎲 RANDOM FACT\n\n" +
-          fact;
+          "📡 AVIATOR FUN SIGNALS\n\n" +
+          "━━━━━━━━━━━━━━━━━━\n\n" +
+          signals +
+          "\n\n━━━━━━━━━━━━━━━━━━\n\n" +
+          "⚠️ Entertainment simulation only.\n" +
+          "These are random generated values and are " +
+          "not real predictions.";
 
       }
 
 
-      // DAILY INSPIRATION
+      // BOT STATUS
+
       else if (
-        text === "💡 Daily Inspiration"
+        text === "📊 BOT STATUS"
       ) {
 
-        const quote =
-          pickRandom(quotes);
+        const uptime =
+          getUptime();
+
+        const date =
+          getKenyaDate();
 
         replyText =
-          "💡 DAILY INSPIRATION\n\n" +
-          `"${quote}"\n\n` +
-          "Keep moving forward.";
-
-      }
-
-
-      // MINI CHALLENGE
-      else if (
-        text === "🎯 Mini Challenge"
-      ) {
-
-        const challenges = [
-
-          "Take 10 minutes today to learn something new.",
-
-          "Write down one goal you want to achieve this week.",
-
-          "Organize one small part of your workspace.",
-
-          "Send a positive message to someone.",
-
-          "Spend 15 minutes improving a skill."
-
-        ];
-
-
-        replyText =
-          "🎯 MINI CHALLENGE\n\n" +
-          pickRandom(challenges) +
-          "\n\nCome back tomorrow for another challenge!";
-
-      }
-
-
-      // PROFILE
-      else if (
-        text === "📊 My Profile"
-      ) {
-
-        const username =
-          update.message.from?.username
-            ? "@" + update.message.from.username
-            : "Not set";
-
-
-        replyText =
-          "📊 YOUR PROFILE\n\n" +
-          `👤 Name: ${firstName}\n` +
-          `🆔 Telegram ID: ${update.message.from.id}\n` +
-          `🔗 Username: ${username}\n\n` +
-          "More profile features can be added later.";
+          "📊 BOT STATUS\n\n" +
+          `🟢 Status: ONLINE\n` +
+          `⚙️ Version: ${VERSION}\n` +
+          `👑 Owner: ${OWNER}\n` +
+          `⏱ Runtime: ${uptime}\n` +
+          `📅 Date: ${date}\n\n` +
+          "Cloudflare Worker is running successfully.";
 
       }
 
 
       // ABOUT
+
       else if (
-        text === "ℹ️ About"
+        text === "ℹ️ ABOUT"
       ) {
 
         replyText =
-          "ℹ️ ABOUT THIS BOT\n\n" +
-          "This is a Telegram bot powered by Cloudflare Workers.\n\n" +
-          "Current features:\n\n" +
-          "• Interactive menu\n" +
-          "• Random facts\n" +
-          "• Daily inspiration\n" +
-          "• Mini challenges\n" +
-          "• Basic profile information\n\n" +
-          "More advanced features can be added later.";
+          "ℹ️ AVIATOR PREDICTIOR\n\n" +
+          "This Telegram bot is an Aviator-themed " +
+          "entertainment simulator.\n\n" +
+          "Features:\n\n" +
+          "✈️ Random simulated multipliers\n" +
+          "📡 Multiple fun signals\n" +
+          "📊 Bot status\n" +
+          "⚙️ Cloudflare Workers hosting\n\n" +
+          "⚠️ The bot cannot predict real gambling " +
+          "game outcomes.";
 
       }
 
 
-      // DEFAULT RESPONSE
+      // OWNER
+
+      else if (
+        text === "👑 OWNER"
+      ) {
+
+        replyText =
+          "👑 BOT OWNER\n\n" +
+          "━━━━━━━━━━━━━━━━━━\n\n" +
+          `Creator: ${OWNER} 🌹\n\n` +
+          "━━━━━━━━━━━━━━━━━━\n\n" +
+          "AVIATOR PREDICTIOR\n" +
+          `Version ${VERSION}`;
+
+      }
+
+
+      // HELP
+
+      else if (
+        text === "/help" ||
+        text === "🆘 HELP"
+      ) {
+
+        replyText =
+          "🆘 HELP CENTER\n\n" +
+          "✈️ GET PREDICTION\n" +
+          "Generates a random entertainment-only " +
+          "Aviator-style multiplier.\n\n" +
+
+          "📡 SIGNALS\n" +
+          "Generates several random simulated signals.\n\n" +
+
+          "📊 BOT STATUS\n" +
+          "Shows bot information and runtime.\n\n" +
+
+          "ℹ️ ABOUT\n" +
+          "Information about the bot.\n\n" +
+
+          "👑 OWNER\n" +
+          "Shows the creator information.";
+
+      }
+
+
+      // DEFAULT
+
       else {
 
         replyText =
-          "🤖 I received your message:\n\n" +
-          `"${text}"\n\n` +
-          "Please choose an option from the menu below or type /help.";
+          "🤖 Please select an option from the menu below.\n\n" +
+          "Use 🏠 HOME to return to the main menu.";
 
       }
 
 
-      // SEND RESPONSE TO TELEGRAM
+      // SEND MESSAGE
+
       await sendMessage(
-
         env.TELEGRAM_BOT_TOKEN,
-
         chatId,
-
         replyText,
-
-        replyMarkup
-
+        mainKeyboard()
       );
 
 
@@ -250,17 +238,14 @@ export default {
         }
       );
 
+    }
 
-    } catch (error) {
+    catch (error) {
 
-      console.error(
-        "Worker error:",
-        error
-      );
-
+      console.error(error);
 
       return new Response(
-        "Internal server error",
+        "Internal Server Error",
         {
           status: 500
         }
@@ -273,10 +258,53 @@ export default {
 };
 
 
+/* ================================
+   MAIN MENU
+================================ */
 
-// MAIN MENU
+function getMainMenu(firstName) {
 
-function mainMenu() {
+  const uptime =
+    getUptime();
+
+  const date =
+    getKenyaDate();
+
+  return (
+
+    "╔═══[ஜ۩: AVIATOR PREDICTIOR ۩ஜ]══╗\n" +
+
+    `║➽ 𝗡𝗔𝗠𝗘: AVIATOR PREDICTIOR\n` +
+    `║➽ 𝗥𝗨𝗡𝗧𝗜𝗠𝗘: ${uptime}\n` +
+    `║➽ 𝗩𝗘𝗥𝗦𝗜𝗢𝗡: ${VERSION}\n` +
+    `║➽ 𝗢𝗪𝗡𝗘𝗥: ${OWNER}\n` +
+    `║➽ 𝗣𝗜𝗡𝗚: ONLINE\n` +
+    `║➽ 𝗗𝗔𝗧𝗘: ${date}\n` +
+
+    "╚═══════ஜ۩۩ஜ═══════╝\n\n" +
+
+    `Welcome, ${firstName}!\n\n` +
+
+    "┏═══════════════════╗\n" +
+    "┃  𝗢𝗨𝗥 𝗗𝗢𝗠𝗔𝗜𝗡𝗦\n" +
+    "╠────────────────────╣\n" +
+    `┃𝐶𝑟𝑒𝑎𝑡𝑜𝑟: UNIQUE ENGOKE LESLEY 🌹\n` +
+    "┗۩═══════════════════╝\n\n" +
+
+    "⚠️ FOR ENTERTAINMENT ONLY\n" +
+    "This bot generates random simulations and " +
+    "does not predict real game outcomes."
+
+  );
+
+}
+
+
+/* ================================
+   TELEGRAM KEYBOARD
+================================ */
+
+function mainKeyboard() {
 
   return {
 
@@ -284,45 +312,41 @@ function mainMenu() {
 
       [
         {
-          text: "🎲 Random Fact"
-        },
-
-        {
-          text: "💡 Daily Inspiration"
+          text: "✈️ GET PREDICTION"
         }
       ],
 
-
       [
         {
-          text: "🎯 Mini Challenge"
+          text: "📡 SIGNALS"
         },
 
         {
-          text: "📊 My Profile"
+          text: "📊 BOT STATUS"
         }
       ],
 
-
       [
         {
-          text: "🆘 Help"
+          text: "ℹ️ ABOUT"
         },
 
         {
-          text: "ℹ️ About"
+          text: "👑 OWNER"
         }
       ],
 
-
       [
         {
-          text: "🏠 Home"
+          text: "🆘 HELP"
+        },
+
+        {
+          text: "🏠 HOME"
         }
       ]
 
     ],
-
 
     resize_keyboard: true,
 
@@ -333,10 +357,94 @@ function mainMenu() {
 }
 
 
+/* ================================
+   RANDOM FUN PREDICTION
+================================ */
 
-// PICK RANDOM ITEM
+function generateFunPrediction() {
 
-function pickRandom(items) {
+  const multipliers = [
+
+    "1.15",
+    "1.24",
+    "1.38",
+    "1.52",
+    "1.67",
+    "1.82",
+    "2.05",
+    "2.28",
+    "2.55",
+    "2.87",
+    "3.15",
+    "3.48",
+    "4.20",
+    "5.50",
+    "7.80"
+
+  ];
+
+  const signals = [
+
+    "LOW",
+    "MEDIUM",
+    "HIGH",
+    "RANDOM SIMULATION"
+
+  ];
+
+  return {
+
+    multiplier:
+      randomItem(multipliers),
+
+    confidence:
+      Math.floor(
+        Math.random() * 40
+      ) + 50,
+
+    signal:
+      randomItem(signals)
+
+  };
+
+}
+
+
+/* ================================
+   MULTIPLE SIGNALS
+================================ */
+
+function generateSignals() {
+
+  let result = "";
+
+  for (
+    let i = 1;
+    i <= 5;
+    i++
+  ) {
+
+    const prediction =
+      generateFunPrediction();
+
+    result +=
+
+      `SIGNAL ${i}\n` +
+      `🚀 ${prediction.multiplier}x\n` +
+      `📊 ${prediction.confidence}%\n\n`;
+
+  }
+
+  return result;
+
+}
+
+
+/* ================================
+   RANDOM ITEM
+================================ */
+
+function randomItem(items) {
 
   return items[
     Math.floor(
@@ -348,8 +456,63 @@ function pickRandom(items) {
 }
 
 
+/* ================================
+   UPTIME
+================================ */
 
-// SEND MESSAGE TO TELEGRAM
+function getUptime() {
+
+  const seconds =
+    Math.floor(
+      (Date.now() - BOT_START_TIME) /
+      1000
+    );
+
+  const hours =
+    Math.floor(
+      seconds / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (seconds % 3600) / 60
+    );
+
+  const remainingSeconds =
+    seconds % 60;
+
+  return (
+    `${hours}h ` +
+    `${minutes}m ` +
+    `${remainingSeconds}s`
+  );
+
+}
+
+
+/* ================================
+   KENYA DATE
+================================ */
+
+function getKenyaDate() {
+
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      timeZone: "Africa/Nairobi",
+      dateStyle: "medium",
+      timeStyle: "short"
+    }
+  ).format(
+    new Date()
+  );
+
+}
+
+
+/* ================================
+   SEND TELEGRAM MESSAGE
+================================ */
 
 async function sendMessage(
   token,
@@ -358,14 +521,10 @@ async function sendMessage(
   replyMarkup
 ) {
 
-  // Check if token exists
   if (!token) {
 
     throw new Error(
-
-      "TELEGRAM_BOT_TOKEN is missing. " +
-      "Add it in Cloudflare Worker Settings."
-
+      "TELEGRAM_BOT_TOKEN secret is missing."
     );
 
   }
@@ -387,8 +546,8 @@ async function sendMessage(
 
         },
 
-
         body:
+
           JSON.stringify({
 
             chat_id:
@@ -407,20 +566,16 @@ async function sendMessage(
     );
 
 
-  // Check for Telegram errors
   if (!response.ok) {
 
     const error =
       await response.text();
 
-
     throw new Error(
-
       "Telegram API error: " +
       error
-
     );
 
   }
 
-      }
+    }
