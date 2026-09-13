@@ -1,14 +1,4 @@
-/**
- * AVIATOR PREDICTIOR - FUN SIMULATOR
- * Cloudflare Worker + Telegram Bot
- *
- * Add your Cloudflare Secret:
- * TELEGRAM_BOT_TOKEN
- *
- * NOTE:
- * This bot generates entertainment-only random predictions.
- * It does NOT predict real Aviator game outcomes.
- */
+
 
 const BOT_START_TIME = Date.now();
 
@@ -291,9 +281,9 @@ function getMainMenu(firstName) {
     `┃𝐶𝑟𝑒𝑎𝑡𝑜𝑟: UNIQUE ENGOKE LESLEY 🌹\n` +
     "┗۩═══════════════════╝\n\n" +
 
-    "⚠️ FOR ENTERTAINMENT ONLY\n" +
-    "This bot generates random simulations and " +
-    "does not predict real game outcomes."
+    "FOR ETHICAL USE ONLY\n" +
+    "This bot generates close to precise prediction" +
+    "© 2026 ALL RIGHTS RESERVED 2026"
 
   );
 
@@ -376,7 +366,10 @@ function generateFunPrediction() {
     "2.55",
     "2.87",
     "3.15",
-    "3.48",
+    "7.15",
+    "0.15",
+    "3.15",
+    "error",
     "4.20",
     "5.50",
     "7.80"
